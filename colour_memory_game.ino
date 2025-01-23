@@ -78,10 +78,11 @@ void loop() {
 
     if (digitalRead(RED_BUTTON_PIN) == LOW) {
       while (digitalRead(RED_BUTTON_PIN) == LOW) {
-        Serial.print("red");
+        digitalWrite(RED_LED_PIN, HIGH);
       }
 
-      Serial.println("Pressed red");
+      digitalWrite(RED_LED_PIN, LOW);
+
       if (currentColourButton == RED_BUTTON_PIN) {
         // Add point
         count++;
@@ -94,9 +95,12 @@ void loop() {
     }
 
     else if (digitalRead(BLUE_BUTTON_PIN) == LOW) {
-      while (digitalRead(BLUE_BUTTON_PIN) == LOW) { Serial.print("blue"); }
+      while (digitalRead(BLUE_BUTTON_PIN) == LOW) {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+      }
 
-      Serial.println("Pressed blue");
+      digitalWrite(BLUE_LED_PIN, LOW);
+
       if (currentColourButton == BLUE_BUTTON_PIN) {
         // Add point
         count++;
@@ -108,31 +112,41 @@ void loop() {
       }
     }
 
-    // if (digitalRead(YELLOW_BUTTON_PIN) == LOW) {
-    //   Serial.println("Pressed yellow");
-    //   if (currentColourButton == YELLOW_BUTTON_PIN) {
-    //     // Add point
-    //     count++;
-    //   } else {
-    //     // you lose
-    //     Serial.println("You lose!");
-    //     playerLost = true;
-    //     break;
-    //   }
-    // }
+    else if (digitalRead(YELLOW_BUTTON_PIN) == LOW) {
+      while (digitalRead(YELLOW_BUTTON_PIN) == LOW) {
+        digitalWrite(YELLOW_LED_PIN, HIGH);
+      }
 
-    // if (digitalRead(GREEN_BUTTON_PIN) == LOW) {
-    //   Serial.println("Pressed green");
-    //   if (currentColourButton == GREEN_BUTTON_PIN) {
-    //     // Add point
-    //     count++;
-    //   } else {
-    //     // you lose
-    //     Serial.println("You lose!");
-    //     playerLost = true;
-    //     break;
-    //   }
-    // }
+      digitalWrite(YELLOW_LED_PIN, LOW);
+
+      if (currentColourButton == YELLOW_BUTTON_PIN) {
+        // Add point
+        count++;
+      } else {
+        // you lose
+        Serial.println("You lose!");
+        playerLost = true;
+        break;
+      }
+    }
+
+    else if (digitalRead(GREEN_BUTTON_PIN) == LOW) {
+      while (digitalRead(GREEN_BUTTON_PIN) == LOW) {
+        digitalWrite(GREEN_LED_PIN, HIGH);
+      }
+
+      digitalWrite(GREEN_LED_PIN, LOW);
+
+      if (currentColourButton == GREEN_BUTTON_PIN) {
+        // Add point
+        count++;
+      } else {
+        // you lose
+        Serial.println("You lose!");
+        playerLost = true;
+        break;
+      }
+    }
   }
 
   if (playerLost) {
@@ -146,11 +160,11 @@ void loop() {
 }
 
 void initializeGame() {
-  blinkTime = 1000;
-  pauseTime = 800;
+  blinkTime = 800;
+  pauseTime = 500;
   level = 0;
   playerLost = false;
-  unsigned int nextColour = colours[random(0, 2)];
+  unsigned int nextColour = colours[random(0, 4)]; // TODO: PLACE 4 AS NUM_COLOURS CONST OR SMTH
   sequence[level] = nextColour;
 }
 
