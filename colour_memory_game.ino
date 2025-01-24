@@ -8,14 +8,35 @@
 #define YELLOW_BUTTON_PIN 6
 #define GREEN_BUTTON_PIN 8
 
-unsigned int blinkTime;  // TODO: COMMENTS
+#define MAX_COLOURS 4  // Max number of colour LEDs
+
+// The number of milliseconds to display an LED light
+unsigned int blinkTime;
+
+// The number of milliseconds to pause before displaying the next LED light
 unsigned int pauseTime;
-unsigned int level;  // Starts from 0
+
+// The player's current level in the game
+unsigned int level;
+
+// The sequence of colours
 unsigned int sequence[50] = { 0 };
-unsigned int colours[4] = { RED_LED_PIN, BLUE_LED_PIN, YELLOW_LED_PIN, GREEN_LED_PIN };
-bool gameStarted = false;
-unsigned int currentColourLED;
+
+// Contains the pin numbers of each colour LED
+unsigned int colours[MAX_COLOURS] = { RED_LED_PIN, BLUE_LED_PIN, YELLOW_LED_PIN, GREEN_LED_PIN };
+
+// Whether the game has started
+// TODO: Use this value in the game
+bool gameStarted;
+
+// Whether the player has lost
 bool playerLost;
+
+// The pin number of the current colour LED that was added in this level
+unsigned int currentColourLED;
+
+// The number of points scored by the player in this game
+unsigned int totalPoints;
 
 void setup() {
   Serial.begin(9600);
@@ -36,43 +57,18 @@ void setup() {
 }
 
 void loop() {
-  // if (gameStarted == false) {
-  //   if (digitalRead(GREEN_BUTTON_PIN) == LOW) {
-  //     digitalWrite(GREEN_LED_PIN, HIGH);
-  //     delay(1000);
-  //   }
-
-  //   digitalWrite(GREEN_LED_PIN, LOW);
-
-  //   Serial.println("Press all four buttons to start");
-
-  //   while (allButtonsPressed() == false) {}
-
-  //   gameStarted = true;
-
-  //   Serial.println("Starting...");
-  //   delay(2000);
-  // }
-
-  delay(1000);
-
-  level++;
-
+  // Blink the LEDs to signal the memory sequence
   for (int i = 0; i < level; i++) {
     currentColourLED = sequence[i];
 
-    digitalWrite(currentColourLED, HIGH);
-    delay(blinkTime);
+    delay(pauseTime);
 
-    digitalWrite(currentColourLED, LOW);
-
-    if (i < level - 1) {
-      delay(pauseTime);
-    }
+    blink(currentColourLED, blinkTime);
   }
 
-  int count = 0;
+  unsigned int count = 0;
 
+  // Check the player's button presses
   while (count < level) {
     unsigned int currentColourButton = sequence[count] - 1;
 
@@ -84,11 +80,8 @@ void loop() {
       digitalWrite(RED_LED_PIN, LOW);
 
       if (currentColourButton == RED_BUTTON_PIN) {
-        // Add point
         count++;
       } else {
-        // you lose
-        Serial.println("You lose!");
         playerLost = true;
         break;
       }
@@ -102,11 +95,8 @@ void loop() {
       digitalWrite(BLUE_LED_PIN, LOW);
 
       if (currentColourButton == BLUE_BUTTON_PIN) {
-        // Add point
         count++;
       } else {
-        // you lose
-        Serial.println("You lose!");
         playerLost = true;
         break;
       }
@@ -120,11 +110,8 @@ void loop() {
       digitalWrite(YELLOW_LED_PIN, LOW);
 
       if (currentColourButton == YELLOW_BUTTON_PIN) {
-        // Add point
         count++;
       } else {
-        // you lose
-        Serial.println("You lose!");
         playerLost = true;
         break;
       }
@@ -138,11 +125,8 @@ void loop() {
       digitalWrite(GREEN_LED_PIN, LOW);
 
       if (currentColourButton == GREEN_BUTTON_PIN) {
-        // Add point
         count++;
       } else {
-        // you lose
-        Serial.println("You lose!");
         playerLost = true;
         break;
       }
@@ -150,28 +134,36 @@ void loop() {
   }
 
   if (playerLost) {
-    gameStarted = false;
+    Serial.println("You lose!");
     initializeGame();
   } else {
-    // Add next colour - put this in function to use in init too
-    unsigned int nextColour = colours[random(0, 2)];
-    sequence[level] = nextColour;
+    totalPoints += count;
+    nextLevel();
   }
 }
 
+// Resets the game from the start.
 void initializeGame() {
   blinkTime = 800;
   pauseTime = 500;
   level = 0;
+  gameStarted = false;
   playerLost = false;
-  unsigned int nextColour = colours[random(0, 4)]; // TODO: PLACE 4 AS NUM_COLOURS CONST OR SMTH
-  sequence[level] = nextColour;
+  totalPoints = 0;
+
+  nextLevel();
 }
 
-bool noButtonsPressed() {
-  return digitalRead(RED_BUTTON_PIN) == HIGH && digitalRead(BLUE_BUTTON_PIN) == HIGH && digitalRead(YELLOW_BUTTON_PIN) == HIGH && digitalRead(GREEN_BUTTON_PIN) == HIGH;
+// Moves the game to the next level
+void nextLevel() {
+  unsigned int nextColour = colours[random(0, 2)];
+  sequence[level] = nextColour;
+  level++;
 }
-// TODO: COMMENTS
-bool allButtonsPressed() {
-  return digitalRead(RED_BUTTON_PIN) == LOW && digitalRead(BLUE_BUTTON_PIN) == LOW && digitalRead(YELLOW_BUTTON_PIN) == LOW && digitalRead(GREEN_BUTTON_PIN) == LOW;
+
+// Blinks the LED light at [outputPin] for [time] milliseconds.
+void blink(unsigned int outputPin, unsigned int time) {
+  digitalWrite(outputPin, HIGH);
+  delay(time);
+  digitalWrite(outputPin, LOW);
 }
