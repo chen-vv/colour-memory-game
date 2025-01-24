@@ -1,3 +1,6 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
 #define RED_LED_PIN 3
 #define BLUE_LED_PIN 5
 #define YELLOW_LED_PIN 7
@@ -9,6 +12,9 @@
 #define GREEN_BUTTON_PIN 8
 
 #define MAX_COLOURS 4  // Max number of colour LEDs
+
+// LCD has 16 columns and 2 rows
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // The number of milliseconds to display an LED light
 unsigned int blinkTime;
@@ -51,19 +57,87 @@ void setup() {
   pinMode(YELLOW_BUTTON_PIN, INPUT);
   pinMode(GREEN_BUTTON_PIN, INPUT);
 
-  randomSeed(analogRead(A5));
+  randomSeed(analogRead(A0));
+
+  setupLcd();
 
   initializeGame();
 }
 
+void setupLcd() {
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+}
+
+void startGame() {
+  digitalWrite(RED_LED_PIN, HIGH);
+  digitalWrite(BLUE_LED_PIN, HIGH);
+  digitalWrite(YELLOW_LED_PIN, HIGH);
+  digitalWrite(GREEN_LED_PIN, HIGH);
+
+  delay(200);
+
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(BLUE_LED_PIN, LOW);
+  digitalWrite(YELLOW_LED_PIN, LOW);
+  digitalWrite(GREEN_LED_PIN, LOW);
+
+  delay(90);
+
+  digitalWrite(RED_LED_PIN, HIGH);
+  digitalWrite(BLUE_LED_PIN, HIGH);
+  digitalWrite(YELLOW_LED_PIN, HIGH);
+  digitalWrite(GREEN_LED_PIN, HIGH);
+
+  delay(200);
+
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(BLUE_LED_PIN, LOW);
+  digitalWrite(YELLOW_LED_PIN, LOW);
+  digitalWrite(GREEN_LED_PIN, LOW);
+
+  delay(90);
+
+  digitalWrite(RED_LED_PIN, HIGH);
+  digitalWrite(BLUE_LED_PIN, HIGH);
+  digitalWrite(YELLOW_LED_PIN, HIGH);
+  digitalWrite(GREEN_LED_PIN, HIGH);
+
+  delay(200);
+
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(BLUE_LED_PIN, LOW);
+  digitalWrite(YELLOW_LED_PIN, LOW);
+  digitalWrite(GREEN_LED_PIN, LOW);
+
+  delay(90);
+
+  blinkLED(RED_LED_PIN, 100);
+  delay(50);
+  blinkLED(BLUE_LED_PIN, 100);
+  delay(50);
+  blinkLED(YELLOW_LED_PIN, 100);
+  delay(50);
+  blinkLED(GREEN_LED_PIN, 100);
+
+  delay(1500);
+}
+
 void loop() {
+  // lcd.setCursor(0, 0);
+  // lcd.print(" How Use Display :)");
+  // lcd.setCursor(4, 1);
+  // lcd.print(" Hd44780 i2c");
+
+
   // Blink the LEDs to signal the memory sequence
   for (int i = 0; i < level; i++) {
     currentColourLED = sequence[i];
 
     delay(pauseTime);
 
-    blink(currentColourLED, blinkTime);
+    blinkLED(currentColourLED, blinkTime);
   }
 
   unsigned int count = 0;
@@ -82,6 +156,8 @@ void loop() {
       if (currentColourButton == RED_BUTTON_PIN) {
         count++;
       } else {
+        Serial.print("You pressed red, but we expected ");
+        Serial.println(currentColourButton);
         playerLost = true;
         break;
       }
@@ -97,6 +173,9 @@ void loop() {
       if (currentColourButton == BLUE_BUTTON_PIN) {
         count++;
       } else {
+
+        Serial.print("You pressed blue, but we expected ");
+        Serial.println(currentColourButton);
         playerLost = true;
         break;
       }
@@ -112,6 +191,9 @@ void loop() {
       if (currentColourButton == YELLOW_BUTTON_PIN) {
         count++;
       } else {
+
+        Serial.print("You pressed yellow, but we expected ");
+        Serial.println(currentColourButton);
         playerLost = true;
         break;
       }
@@ -127,14 +209,27 @@ void loop() {
       if (currentColourButton == GREEN_BUTTON_PIN) {
         count++;
       } else {
+
+        Serial.print("You pressed green, but we expected ");
+        Serial.println(currentColourButton);
         playerLost = true;
         break;
       }
     }
+
+    delay(100);
   }
+
+  delay(800);
 
   if (playerLost) {
     Serial.println("You lose!");
+    blinkLED(sequence[count], 200);
+    delay(100);
+    blinkLED(sequence[count], 200);
+    delay(100);
+    blinkLED(sequence[count], 200);
+    delay(100);
     initializeGame();
   } else {
     totalPoints += count;
@@ -151,18 +246,33 @@ void initializeGame() {
   playerLost = false;
   totalPoints = 0;
 
-  nextLevel();
+  // startGame();
+  getNextColour();
+}
+
+// Gets the next colour and appends it to [sequence]
+void getNextColour() {
+  unsigned int nextColour = colours[random(0, MAX_COLOURS)];
+  sequence[level] = nextColour;
 }
 
 // Moves the game to the next level
 void nextLevel() {
-  unsigned int nextColour = colours[random(0, 2)];
-  sequence[level] = nextColour;
+  getNextColour();
+
+  double blinkResult = (double)(blinkTime * 4) / 5;
+  double pauseResult = (double)(pauseTime * 4) / 5;
+
+  blinkTime = (int)blinkResult;
+  pauseTime = (int)pauseResult;
+
+  // TODO: Set up minimum threshold time (blink still needs to be visible)
+  
   level++;
 }
 
 // Blinks the LED light at [outputPin] for [time] milliseconds.
-void blink(unsigned int outputPin, unsigned int time) {
+void blinkLED(unsigned int outputPin, unsigned int time) {
   digitalWrite(outputPin, HIGH);
   delay(time);
   digitalWrite(outputPin, LOW);
