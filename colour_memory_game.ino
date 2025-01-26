@@ -3,15 +3,19 @@
 
 #define RED_LED_PIN 3
 #define BLUE_LED_PIN 5
-#define YELLOW_LED_PIN 7
-#define GREEN_LED_PIN 9
+#define YELLOW_LED_PIN 9
+#define GREEN_LED_PIN 11
 
 #define RED_BUTTON_PIN 2
 #define BLUE_BUTTON_PIN 4
-#define YELLOW_BUTTON_PIN 6
-#define GREEN_BUTTON_PIN 8
+#define YELLOW_BUTTON_PIN 8
+#define GREEN_BUTTON_PIN 10
 
-#define MAX_COLOURS 4  // Max number of colour LEDs
+#define MAX_COLOURS 4          // Max number of colour LEDs
+#define DEFAULT_BRIGHTNESS 50  // Default brightness to display LEDs
+#define MS_IN_SECOND 1000
+#define MIN_BLINK_TIME 200
+#define MIN_PAUSE_TIME 100
 
 // LCD has 16 columns and 2 rows
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -70,74 +74,21 @@ void setupLcd() {
   lcd.clear();
 }
 
-void startGame() {
-  digitalWrite(RED_LED_PIN, HIGH);
-  digitalWrite(BLUE_LED_PIN, HIGH);
-  digitalWrite(YELLOW_LED_PIN, HIGH);
-  digitalWrite(GREEN_LED_PIN, HIGH);
-
-  delay(200);
-
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(BLUE_LED_PIN, LOW);
-  digitalWrite(YELLOW_LED_PIN, LOW);
-  digitalWrite(GREEN_LED_PIN, LOW);
-
-  delay(90);
-
-  digitalWrite(RED_LED_PIN, HIGH);
-  digitalWrite(BLUE_LED_PIN, HIGH);
-  digitalWrite(YELLOW_LED_PIN, HIGH);
-  digitalWrite(GREEN_LED_PIN, HIGH);
-
-  delay(200);
-
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(BLUE_LED_PIN, LOW);
-  digitalWrite(YELLOW_LED_PIN, LOW);
-  digitalWrite(GREEN_LED_PIN, LOW);
-
-  delay(90);
-
-  digitalWrite(RED_LED_PIN, HIGH);
-  digitalWrite(BLUE_LED_PIN, HIGH);
-  digitalWrite(YELLOW_LED_PIN, HIGH);
-  digitalWrite(GREEN_LED_PIN, HIGH);
-
-  delay(200);
-
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(BLUE_LED_PIN, LOW);
-  digitalWrite(YELLOW_LED_PIN, LOW);
-  digitalWrite(GREEN_LED_PIN, LOW);
-
-  delay(90);
-
-  blinkLED(RED_LED_PIN, 100);
-  delay(50);
-  blinkLED(BLUE_LED_PIN, 100);
-  delay(50);
-  blinkLED(YELLOW_LED_PIN, 100);
-  delay(50);
-  blinkLED(GREEN_LED_PIN, 100);
-
-  delay(1500);
-}
-
 void loop() {
-  // lcd.setCursor(0, 0);
-  // lcd.print(" How Use Display :)");
-  // lcd.setCursor(4, 1);
-  // lcd.print(" Hd44780 i2c");
+  while (gameStarted == false) {
+    waitForGameStart();
+  }
 
+  delay(200);
 
   // Blink the LEDs to signal the memory sequence
   for (int i = 0; i < level; i++) {
     currentColourLED = sequence[i];
-
     delay(pauseTime);
-
     blinkLED(currentColourLED, blinkTime);
+
+    Serial.print(mapPinToColour(currentColourLED));
+    Serial.print(" ");
   }
 
   unsigned int count = 0;
@@ -148,16 +99,20 @@ void loop() {
 
     if (digitalRead(RED_BUTTON_PIN) == LOW) {
       while (digitalRead(RED_BUTTON_PIN) == LOW) {
-        digitalWrite(RED_LED_PIN, HIGH);
+        analogWrite(RED_LED_PIN, DEFAULT_BRIGHTNESS);
       }
 
       digitalWrite(RED_LED_PIN, LOW);
 
       if (currentColourButton == RED_BUTTON_PIN) {
+        totalPoints++;
         count++;
+
+        lcd.setCursor(7, 0);
+        lcd.print(totalPoints);
       } else {
         Serial.print("You pressed red, but we expected ");
-        Serial.println(currentColourButton);
+        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -165,17 +120,21 @@ void loop() {
 
     else if (digitalRead(BLUE_BUTTON_PIN) == LOW) {
       while (digitalRead(BLUE_BUTTON_PIN) == LOW) {
-        digitalWrite(BLUE_LED_PIN, HIGH);
+        analogWrite(BLUE_LED_PIN, DEFAULT_BRIGHTNESS);
       }
 
       digitalWrite(BLUE_LED_PIN, LOW);
 
       if (currentColourButton == BLUE_BUTTON_PIN) {
+        totalPoints++;
         count++;
+
+        lcd.setCursor(7, 0);
+        lcd.print(totalPoints);
       } else {
 
         Serial.print("You pressed blue, but we expected ");
-        Serial.println(currentColourButton);
+        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -183,17 +142,21 @@ void loop() {
 
     else if (digitalRead(YELLOW_BUTTON_PIN) == LOW) {
       while (digitalRead(YELLOW_BUTTON_PIN) == LOW) {
-        digitalWrite(YELLOW_LED_PIN, HIGH);
+        analogWrite(YELLOW_LED_PIN, DEFAULT_BRIGHTNESS);
       }
 
       digitalWrite(YELLOW_LED_PIN, LOW);
 
       if (currentColourButton == YELLOW_BUTTON_PIN) {
+        totalPoints++;
         count++;
+
+        lcd.setCursor(7, 0);
+        lcd.print(totalPoints);
       } else {
 
         Serial.print("You pressed yellow, but we expected ");
-        Serial.println(currentColourButton);
+        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -201,17 +164,21 @@ void loop() {
 
     else if (digitalRead(GREEN_BUTTON_PIN) == LOW) {
       while (digitalRead(GREEN_BUTTON_PIN) == LOW) {
-        digitalWrite(GREEN_LED_PIN, HIGH);
+        analogWrite(GREEN_LED_PIN, DEFAULT_BRIGHTNESS);
       }
 
       digitalWrite(GREEN_LED_PIN, LOW);
 
       if (currentColourButton == GREEN_BUTTON_PIN) {
+        totalPoints++;
         count++;
+
+        lcd.setCursor(7, 0);
+        lcd.print(totalPoints);
       } else {
 
         Serial.print("You pressed green, but we expected ");
-        Serial.println(currentColourButton);
+        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -232,9 +199,78 @@ void loop() {
     delay(100);
     initializeGame();
   } else {
-    totalPoints += count;
     nextLevel();
   }
+}
+
+// Shows the LEDs in various brightness levels, in a fade-in and fade-out pattern.
+// Turns all LEDs off when a button is pressed, and updates the LCD display to signal
+// game start.
+void waitForGameStart() {
+  int brightnessIncrements = 5;
+  int maxBrightness = 255;
+
+  for (int i = 1; i <= brightnessIncrements; i++) {
+    analogWrite(RED_LED_PIN, maxBrightness * i / brightnessIncrements);
+    analogWrite(BLUE_LED_PIN, maxBrightness * i / brightnessIncrements);
+    analogWrite(YELLOW_LED_PIN, maxBrightness * i / brightnessIncrements);
+    analogWrite(GREEN_LED_PIN, maxBrightness * i / brightnessIncrements);
+
+    if (digitalRead(RED_BUTTON_PIN) == LOW || digitalRead(BLUE_BUTTON_PIN) == LOW || digitalRead(YELLOW_BUTTON_PIN) == LOW || digitalRead(GREEN_BUTTON_PIN) == LOW) {
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(BLUE_LED_PIN, LOW);
+      digitalWrite(YELLOW_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, LOW);
+      gameStarted = true;
+
+      showStartText();
+      return;
+    }
+
+    delay(200);
+  }
+
+  for (int i = brightnessIncrements; i >= 0; i--) {
+    analogWrite(RED_LED_PIN, maxBrightness * i / brightnessIncrements);
+    analogWrite(BLUE_LED_PIN, maxBrightness * i / brightnessIncrements);
+    analogWrite(YELLOW_LED_PIN, maxBrightness * i / brightnessIncrements);
+    analogWrite(GREEN_LED_PIN, maxBrightness * i / brightnessIncrements);
+
+    if (digitalRead(RED_BUTTON_PIN) == LOW || digitalRead(BLUE_BUTTON_PIN) == LOW || digitalRead(YELLOW_BUTTON_PIN) == LOW || digitalRead(GREEN_BUTTON_PIN) == LOW) {
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(BLUE_LED_PIN, LOW);
+      digitalWrite(YELLOW_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, LOW);
+      gameStarted = true;
+
+      showStartText();
+      return;
+    }
+
+    delay(200);
+  }
+}
+
+// Clears the LCD and shows text signalling the start of a new game
+void showStartText() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Game starting in");
+  lcd.setCursor(8, 1);
+  lcd.print("3");
+  delay(MS_IN_SECOND);
+  lcd.setCursor(8, 1);
+  lcd.print("2");
+  delay(MS_IN_SECOND);
+  lcd.setCursor(8, 1);
+  lcd.print("1");
+  delay(MS_IN_SECOND);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Score:");
+  lcd.setCursor(7, 0);
+  lcd.print(totalPoints);
 }
 
 // Resets the game from the start.
@@ -246,8 +282,14 @@ void initializeGame() {
   playerLost = false;
   totalPoints = 0;
 
-  // startGame();
   getNextColour();
+  level = 1;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Press any button");
+  lcd.setCursor(4, 1);
+  lcd.print("to start!");
 }
 
 // Gets the next colour and appends it to [sequence]
@@ -266,14 +308,33 @@ void nextLevel() {
   blinkTime = (int)blinkResult;
   pauseTime = (int)pauseResult;
 
-  // TODO: Set up minimum threshold time (blink still needs to be visible)
-  
+  if (blinkTime < MIN_BLINK_TIME) {
+    blinkTime = MIN_BLINK_TIME;
+  }
+
+  if (pauseTime < MIN_PAUSE_TIME) {
+    pauseTime = MIN_PAUSE_TIME;
+  }
+
   level++;
 }
 
 // Blinks the LED light at [outputPin] for [time] milliseconds.
 void blinkLED(unsigned int outputPin, unsigned int time) {
-  digitalWrite(outputPin, HIGH);
+  analogWrite(outputPin, DEFAULT_BRIGHTNESS);
   delay(time);
   digitalWrite(outputPin, LOW);
+}
+
+// TODO: COMMENTS
+String mapPinToColour(unsigned int pin) {
+  if (pin == RED_LED_PIN || pin == RED_BUTTON_PIN) {
+    return "red";
+  } else if (pin == BLUE_LED_PIN || pin == BLUE_BUTTON_PIN) {
+    return "blue";
+  } else if (pin == YELLOW_LED_PIN || pin == YELLOW_BUTTON_PIN) {
+    return "yellow";
+  } else if (pin == GREEN_LED_PIN || pin == GREEN_BUTTON_PIN) {
+    return "green";
+  }
 }
