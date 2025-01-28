@@ -11,9 +11,9 @@
 #define YELLOW_BUTTON_PIN 8
 #define GREEN_BUTTON_PIN 10
 
-#define MAX_COLOURS 4          // Max number of colour LEDs
-#define DEFAULT_BRIGHTNESS 50  // Default brightness to display LEDs
+#define MAX_COLOURS 4  // Max number of colour LEDs
 #define MS_IN_SECOND 1000
+#define DEFAULT_BRIGHTNESS 50
 #define MIN_BLINK_TIME 200
 #define MIN_PAUSE_TIME 100
 
@@ -86,9 +86,6 @@ void loop() {
     currentColourLED = sequence[i];
     delay(pauseTime);
     blinkLED(currentColourLED, blinkTime);
-
-    Serial.print(mapPinToColour(currentColourLED));
-    Serial.print(" ");
   }
 
   unsigned int count = 0;
@@ -105,14 +102,9 @@ void loop() {
       digitalWrite(RED_LED_PIN, LOW);
 
       if (currentColourButton == RED_BUTTON_PIN) {
-        totalPoints++;
+        updatePoints();
         count++;
-
-        lcd.setCursor(7, 0);
-        lcd.print(totalPoints);
       } else {
-        Serial.print("You pressed red, but we expected ");
-        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -126,15 +118,9 @@ void loop() {
       digitalWrite(BLUE_LED_PIN, LOW);
 
       if (currentColourButton == BLUE_BUTTON_PIN) {
-        totalPoints++;
+        updatePoints();
         count++;
-
-        lcd.setCursor(7, 0);
-        lcd.print(totalPoints);
       } else {
-
-        Serial.print("You pressed blue, but we expected ");
-        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -148,15 +134,9 @@ void loop() {
       digitalWrite(YELLOW_LED_PIN, LOW);
 
       if (currentColourButton == YELLOW_BUTTON_PIN) {
-        totalPoints++;
+        updatePoints();
         count++;
-
-        lcd.setCursor(7, 0);
-        lcd.print(totalPoints);
       } else {
-
-        Serial.print("You pressed yellow, but we expected ");
-        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -170,15 +150,9 @@ void loop() {
       digitalWrite(GREEN_LED_PIN, LOW);
 
       if (currentColourButton == GREEN_BUTTON_PIN) {
-        totalPoints++;
+        updatePoints();
         count++;
-
-        lcd.setCursor(7, 0);
-        lcd.print(totalPoints);
       } else {
-
-        Serial.print("You pressed green, but we expected ");
-        Serial.println(mapPinToColour(currentColourButton));
         playerLost = true;
         break;
       }
@@ -190,13 +164,11 @@ void loop() {
   delay(800);
 
   if (playerLost) {
-    Serial.println("You lose!");
-    blinkLED(sequence[count], 200);
-    delay(100);
-    blinkLED(sequence[count], 200);
-    delay(100);
-    blinkLED(sequence[count], 200);
-    delay(100);
+    for (int i = 0; i < 5; i++) {
+      blinkLED(sequence[count], 80);
+      delay(100);
+    }
+
     initializeGame();
   } else {
     nextLevel();
@@ -321,20 +293,15 @@ void nextLevel() {
 
 // Blinks the LED light at [outputPin] for [time] milliseconds.
 void blinkLED(unsigned int outputPin, unsigned int time) {
-  analogWrite(outputPin, DEFAULT_BRIGHTNESS);
+  digitalWrite(outputPin, HIGH);
   delay(time);
   digitalWrite(outputPin, LOW);
 }
 
-// TODO: COMMENTS
-String mapPinToColour(unsigned int pin) {
-  if (pin == RED_LED_PIN || pin == RED_BUTTON_PIN) {
-    return "red";
-  } else if (pin == BLUE_LED_PIN || pin == BLUE_BUTTON_PIN) {
-    return "blue";
-  } else if (pin == YELLOW_LED_PIN || pin == YELLOW_BUTTON_PIN) {
-    return "yellow";
-  } else if (pin == GREEN_LED_PIN || pin == GREEN_BUTTON_PIN) {
-    return "green";
-  }
+/// Updates the points after the player has pressed a correct button.
+void updatePoints() {
+  totalPoints++;
+
+  lcd.setCursor(7, 0);
+  lcd.print(totalPoints);
 }
